@@ -1,15 +1,13 @@
-import numpy as np
+# 多特征训练,年份和楼层两个特征
 
-'''
-对数据进行封装，采用dataset和dataloader的方式进行模型的训练
-这个例子是单特征的训练和预测
-'''
+import numpy as np
 
 
 class MyDataset:
-    def __init__(self, xs, ys, batch_size, shuffle):
+    def __init__(self, xs, ys, zs, batch_size, shuffle):
         self.xs = xs
         self.ys = ys
+        self.zs = zs
         self.batch_size = batch_size
         self.shuffle = shuffle
 
@@ -24,7 +22,6 @@ class DataLoader:
     def __init__(self, dataset):
         self.dataset = dataset
         self.cursor = 0
-
         self.indexs = np.arange(len(self.dataset))
 
         if self.dataset.shuffle:
@@ -38,45 +35,54 @@ class DataLoader:
 
         x = self.dataset.xs[index]
         y = self.dataset.ys[index]
-
+        z = self.dataset.zs[index]
         self.cursor += self.dataset.batch_size
 
-        return x, y
+        return x, y, z
 
 
 if __name__ == "__main__":
-
     years = np.array([i for i in range(2000, 2022)])
     years = (years - 2000) / 22
+
+    floors = np.array([i for i in range(23, 1, -1)])
+    floors = floors / 23
 
     prices = np.array(
         [10000, 11000, 12000, 13000, 14000, 12000, 13000, 16000, 18000, 20000, 19000, 22000, 24000, 23000, 26000, 35000,
          30000, 40000, 45000, 52000, 50000, 60000])
     prices = prices / 60000
-    # 数据归一化: 除以最大值, z-score归一化, min-max
 
-    k = 1
+    lr = 0.05
+    epoch = 10000
+
+    k1 = 1
+    k2 = -1
     b = 0
-    lr = 0.07
-    epoch = 5000
+    batch_size = 8
 
-    batch_size = 2
-    shuffle = True
-
-    dataset = MyDataset(years, prices, batch_size, shuffle)
+    dataset = MyDataset(years, floors, prices, batch_size, shuffle=True)
 
     for e in range(epoch):
-        for year, price in dataset:
-            pre = k * year + b
-            loss = (pre - price) ** 2
+        for year, floor, price in dataset:
+            predict = k1 * year + k2 * floor + 1 * b
 
-            delta_k = (k * year + b - price) * year
-            delta_b = (k * year + b - price)
+            loss = np.sum((predict - price) * year)
+            delta_k1 = np.sum((predict - price) * year)
+            delta_k2 = np.sum((predict - price) * floor)
+            delta_b = np.sum((predict - price))
 
-            k -= np.sum(delta_k) / batch_size * lr
-            b -= np.sum(delta_b) / batch_size * lr
+            k1 -= lr * delta_k1
+            k2 -= lr * delta_k2
+            b -= lr * delta_b
 
-    while True:
-        test_year = (int(input("请输入预测的年份: ")) - 2000) / 22
-        predict_price = test_year * k + b
-        print(predict_price * 60000)
+        if e % 100 == 0:
+            print(loss)
+
+while True:
+    year = (int(input("请输入年份：")) - 2000)
+    floor = (int(input("请输入楼层：")) / 23)
+
+    p = year * k1 + floor * k2 + b
+
+    print("房价为：", p * 60000)
