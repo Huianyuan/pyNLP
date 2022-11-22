@@ -17,8 +17,8 @@
 9. word2vec：词向量生成
 10. SimpleTextClassification：简单的文本分类，包含以下几个
     1. 采用onehot编码，实现简单的分类
-
-
+    1. word2vec模型文本分类
+    1. pytorch内置RNN文本分类
 
 
 
