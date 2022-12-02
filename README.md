@@ -19,6 +19,7 @@
     1. 采用onehot编码，实现简单的分类
     1. word2vec模型文本分类
     1. pytorch内置RNN文本分类
+    1. Transformer简单使用（未完成分类实现，待完善）
 
 
 
